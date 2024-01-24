@@ -4,7 +4,7 @@ CREATE TABLE `users` (
     `username` VARCHAR(50) NOT NULL,
     `email` VARCHAR(50) NOT NULL,
     `password` VARCHAR(50) NOT NULL,
-    `token` VARCHAR(50) NOT NULL,
+    `token` VARCHAR(50) NULL,
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `users_email_key`(`email`),
