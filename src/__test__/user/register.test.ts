@@ -1,12 +1,12 @@
 import supertest from "supertest";
-import { after, before } from "../utils";
+import { createUser, deleteUser } from "../utils/users";
 import { web } from "../../utils/web";
 
 const request = supertest(web);
 
 describe("POST /api/user/register", () => {
   afterEach(async () => {
-    await after({ email: "test@example.com" });
+    await deleteUser({ email: "test@example.com" });
   });
 
   it("success register", async () => {
@@ -26,7 +26,7 @@ describe("POST /api/user/register", () => {
   });
 
   it("User already exists", async () => {
-    await before({
+    await createUser({
       username: "test",
       email: "test@example.com",
       password: "Test123.com",

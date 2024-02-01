@@ -1,10 +1,10 @@
 -- CreateTable
 CREATE TABLE `users` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `username` VARCHAR(50) NOT NULL,
+    `username` VARCHAR(20) NOT NULL,
     `email` VARCHAR(50) NOT NULL,
-    `password` VARCHAR(50) NOT NULL,
-    `token` VARCHAR(50) NULL,
+    `password` VARCHAR(100) NOT NULL,
+    `token` VARCHAR(100) NULL,
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `users_email_key`(`email`),

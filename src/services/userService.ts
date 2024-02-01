@@ -5,6 +5,7 @@ import validate from "../validation/validation";
 import bcrypt from "bcrypt";
 import { NextFunction, Response } from "express";
 import error from "../res/error";
+import logger from "../utils/logger";
 
 interface ServiceFunction {
   (req: object, res: Response, next: NextFunction): Promise<object>;
@@ -32,6 +33,8 @@ const register: ServiceFunction = async (req, res, next) => {
 
   const hashedPassword = await bcrypt.hash(result.password, 10);
   const token = uuid().toString();
+
+  logger.app.info(`${result.email} has been created an account`);
 
   return await prismaClient.users.create({
     data: {
@@ -65,25 +68,29 @@ const login: ServiceFunction = async (req, res, next) => {
 
   if (!user) {
     next(
-      error(400, {
-        message: "User or password invalid",
-        details: `The email ${result.email} or the password is not valid`,
+      error(401, {
+        message: "Email or password wrong",
+        details: `The email ${result.email} or the password is wrong`,
       })
     );
+    return;
   }
 
-  const isValidPassword = await bcrypt.compare(result.password, user.password);
+  const isValidPassword = await bcrypt.compare(result.password, user.password);  
 
   if (!isValidPassword) {
     next(
-      error(400, {
-        message: "User or password invalid",
-        details: `The email ${result.email} or the password is not valid`,
+      error(401, {
+        message: "Email or password wrong",
+        details: `The email ${result.email} or the password is wrong`,
       })
     );
+    return;
   }
 
   const token = uuid().toString();
+
+  logger.app.info(`${result.email} has been logging in`)
 
   return await prismaClient.users.update({
     where: {
