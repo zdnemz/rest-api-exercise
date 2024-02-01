@@ -1,8 +1,17 @@
-import ResponseError from "../error/error";
-import { Errback, Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
+import logger from "../utils/logger";
+
+interface ErrorType {
+  success: boolean;
+  status: number;
+  error: {
+    message: string;
+    details: string;
+  };
+}
 
 const error = (
-  err: Errback,
+  err: ErrorType,
   req: Request,
   res: Response,
   next: NextFunction
@@ -12,13 +21,9 @@ const error = (
     return;
   }
 
-  if (err instanceof ResponseError) {
-    res.status(err.status).json({ message: err.message });
-    return;
-  } else {
-    res.status(500).json({ message: "Internal server error" });
-    return;
-  }
+  res.status(err.status).json(err);
+  logger.app.error(JSON.stringify(err))
+  return;
 };
 
 export default error;

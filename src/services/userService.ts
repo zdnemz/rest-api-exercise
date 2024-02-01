@@ -1,27 +1,33 @@
-import { prismaClient } from "../application/database";
-import ResponseError from "../error/error";
+import { prismaClient } from "../utils/database";
 import { v4 as uuid } from "uuid";
-import { Request } from "express";
-import userValidation from "../validation/userValidation";
+import userValidation from "../validation/schema/userValidation";
 import validate from "../validation/validation";
 import bcrypt from "bcrypt";
+import { NextFunction, Response } from "express";
+import error from "../res/error";
 
 interface ServiceFunction {
-  (req: Request): Promise<object>;
+  (req: object, res: Response, next: NextFunction): Promise<object>;
 }
 
-const register: ServiceFunction = async (req) => {
+const register: ServiceFunction = async (req, res, next) => {
   const result: { username: string; email: string; password: string } =
-    await validate(userValidation.register, req);
+    await validate(userValidation.register, req, next);
 
   const countUsers = await prismaClient.users.count({
     where: {
       email: result.email,
     },
-  })
+  });
 
   if (countUsers) {
-    throw new ResponseError(400, 'User already exists')
+    next(
+      error(400, {
+        message: "User already exists",
+        details: `The email ${result.email} already exists`,
+      })
+    );
+    return;
   }
 
   const hashedPassword = await bcrypt.hash(result.password, 10);
@@ -32,56 +38,67 @@ const register: ServiceFunction = async (req) => {
       username: result.username,
       email: result.email,
       password: hashedPassword,
-      token
+      token,
     },
     select: {
-      token: true
-    }
-  })
+      token: true,
+    },
+  });
 };
 
-const login: ServiceFunction = async (req) => {
+const login: ServiceFunction = async (req, res, next) => {
   const result: { email: string; password: string } = await validate(
-    userValidation.register,
-    req
+    userValidation.login,
+    req,
+    next
   );
 
   const user = await prismaClient.users.findUnique({
     where: {
-      email: result.email
+      email: result.email,
     },
     select: {
       email: true,
       password: true,
-    }
-  })
+    },
+  });
 
   if (!user) {
-    throw new ResponseError(400, 'User not found')
+    next(
+      error(400, {
+        message: "User or password invalid",
+        details: `The email ${result.email} or the password is not valid`,
+      })
+    );
   }
 
   const isValidPassword = await bcrypt.compare(result.password, user.password);
 
   if (!isValidPassword) {
-    throw new ResponseError(400, 'Invalid password')
+    next(
+      error(400, {
+        message: "User or password invalid",
+        details: `The email ${result.email} or the password is not valid`,
+      })
+    );
   }
 
   const token = uuid().toString();
 
   return await prismaClient.users.update({
     where: {
-      email: result.email
+      email: result.email,
     },
     data: {
-      token
+      token,
     },
     select: {
-      token: true
-    }
-  })
-}
+      token: true,
+    },
+  });
+};
 
 export default {
   register,
-  login
+  login,
 };

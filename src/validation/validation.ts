@@ -1,25 +1,25 @@
-import ResponseError from "../error/error";
-import { Request } from "express";
-import { Schema } from "joi";
+import { NextFunction } from "express";
+import Joi from "joi";
+import error from "../res/error";
 
 interface ValidateFunction {
-  (schema: Schema, request: Request): Promise<any>;
+  (schema: Joi.ObjectSchema, request: object, next: NextFunction): Promise<any>;
 }
 
-const validate: ValidateFunction = async (
-  schema: Schema,
-  request: Request
-) => {
-  const result = schema.validate(request.body, {
+const validate: ValidateFunction = async (schema, request, next) => {
+  const result = schema.validate(request, {
     abortEarly: false,
     allowUnknown: false,
   });
 
   if (result.error) {
-    throw new ResponseError(400, result.error.message);
+    next(
+      error(400, { message: "Validation error", details: result.error.message })
+    );
+    return;
   }
 
   return result.value;
 };
 
-export default validate
+export default validate;
